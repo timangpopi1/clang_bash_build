@@ -282,7 +282,7 @@ if [ -d "$BINUTILS_DIR"/ ]; then
 		cd $BUILDDIR
 		binutils_clone
 	else
-		echo "Existing binutils repo found, skipping clone
+		echo "Existing binutils repo found, skipping clone"
 	fi
 else
 	echo "cloning GNU binutils repo"
@@ -481,41 +481,6 @@ export PATH="$STAGE2:$BINTUILS_64_BIN_DIR:$BINTUILS_32_BIN_DIR:$STOCK_PATH"
 
 # Train PGO
 cd "$KERNEL_DIR"
-
-echo "Training x86"
-make distclean defconfig \
-	LLVM=1 \
-	LLVM_IAS=1 \
-	CC="$STAGE2"/clang \
-	LD="$STAGE2"/ld.lld \
-	AR="$STAGE2"/llvm-ar \
-	NM="$STAGE2"/llvm-nm \
-	LD="$STAGE2"/ld.lld \
-	STRIP="$STAGE2"/llvm-strip \
-	OBJCOPY="$STAGE2"/llvm-objcopy \
-	OBJDUMP="$STAGE2"/llvm-objdump \
-	OBJSIZE="$STAGE2"/llvm-size \
-	HOSTCC="$STAGE2"/clang \
-	HOSTCXX="$STAGE2"/clang++ \
-	HOSTAR="$STAGE2"/llvm-ar \
-	HOSTLD="$STAGE2"/ld.lld
-
-time make all -s -j$(nproc --all) \
-	LLVM=1 \
-	LLVM_IAS=1 \
-	CC="$STAGE2"/clang \
-	LD="$STAGE2"/ld.lld \
-	AR="$STAGE2"/llvm-ar \
-	NM="$STAGE2"/llvm-nm \
-	LD="$STAGE2"/ld.lld \
-	STRIP="$STAGE2"/llvm-strip \
-	OBJCOPY="$STAGE2"/llvm-objcopy \
-	OBJDUMP="$STAGE2"/llvm-objdump \
-	OBJSIZE="$STAGE2"/llvm-size \
-	HOSTCC="$STAGE2"/clang \
-	HOSTCXX="$STAGE2"/clang++ \
-	HOSTAR="$STAGE2"/llvm-ar \
-	HOSTLD="$STAGE2"/ld.lld || exit ${?}
 
 echo "Training arm64"
 make distclean defconfig \
