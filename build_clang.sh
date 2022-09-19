@@ -9,8 +9,8 @@ LINUX_VER="5.19.8"
 BINUTILS_VER="2_39"
 BUILDDIR=$(pwd)
 CLEAN_BUILD=3
-POLLY_OPT=1
-BOLT_OPT=1
+POLLY_OPT=0
+BOLT_OPT=0
 
 # DO NOT CHANGE
 USE_SYSTEM_BINUTILS_64=1
@@ -28,12 +28,6 @@ KERNEL_DIR="$BUILDDIR/linux-$LINUX_VER"
 
 LLVM_BUILD="$BUILDDIR/llvm-build"
 
-if [[ $CI -eq 1 ]]; then
-	telegram-send --format html "\
-		<b>🔨 Neutron Clang Build Started</b>
-		Build Date: <code>$(date +"%Y-%m-%d %H:%M")</code>"
-fi
-
 echo "Starting LLVM Build"
 
 rm -rf $KERNEL_DIR
@@ -46,39 +40,20 @@ fi
 
 # Where all relevant build-related repositories are cloned.
 llvm_clone() {
-
-	if ! git clone https://github.com/llvm/llvm-project.git; then
-		echo "llvm-project git clone: Failed" >&2
-		exit 1
-	fi
-}
-
-llvm_pull() {
-
-	if ! git pull https://github.com/llvm/llvm-project.git; then
-		echo "llvm-project git Pull: Failed" >&2
-		exit 1
-	fi
+    if ! git clone --depth=1 https://github.com/llvm/llvm-project.git; then
+        echo "llvm-project git clone: Failed" >&2
+        exit 1
+    fi
 }
 
 binutils_clone() {
-
-	if ! git clone https://sourceware.org/git/binutils-gdb.git -b binutils-$BINUTILS_VER-branch; then
+	if ! git clone --depth=1 https://sourceware.org/git/binutils-gdb.git -b binutils-$BINUTILS_VER-branch; then
 		echo "binutils git clone: Failed" >&2
 		exit 1
 	fi
 }
 
-binutils_pull() {
-
-	if ! git pull https://sourceware.org/git/binutils-gdb.git binutils-$BINUTILS_VER-branch; then
-		echo "binutils git Pull: Failed" >&2
-		exit 1
-	fi
-}
-
 get_linux_5_tarball() {
-
 	if [ -e linux-$1.tar.xz ]; then
 		echo "Existing linux-$1 tarball found, skipping download"
 		tar xf linux-$1.tar.xz
@@ -90,7 +65,6 @@ get_linux_5_tarball() {
 }
 
 build_temp_binutils() {
-
 	rm -rf $TEMP_BINTUILS_BUILD
 	mkdir -p $TEMP_BINTUILS_BUILD
 	if [ "$1" = "aarch64-linux-gnu" ]; then
@@ -126,8 +100,7 @@ build_temp_binutils() {
 		--enable-gold \
 		--enable-threads \
 		--enable-ld=default \
-		--quiet \
-		--with-pkgversion="Neutron Binutils"
+		--quiet
 
 	make -s -j$(nproc --all) >/dev/null
 	make install -s -j$(nproc --all) >/dev/null
@@ -136,7 +109,6 @@ build_temp_binutils() {
 }
 
 bolt_profile_gen() {
-
 	if [ "$1" = "perf" ]; then
 		echo "Training arm64"
 		cd "$KERNEL_DIR"
@@ -295,11 +267,6 @@ if [ -d "$LLVM_DIR"/ ]; then
 		echo "llvm-project dir found but not a git repo, recloning"
 		cd $BUILDDIR
 		llvm_clone
-	else
-		echo "Existing llvm repo found, skipping clone"
-		echo "Fetching new changes"
-		llvm_pull
-		cd $BUILDDIR
 	fi
 else
 	echo "cloning llvm project repo"
@@ -315,10 +282,7 @@ if [ -d "$BINUTILS_DIR"/ ]; then
 		cd $BUILDDIR
 		binutils_clone
 	else
-		echo "Existing binutils repo found, skipping clone"
-		echo "Fetching new changes"
-		binutils_pull
-		cd $BUILDDIR
+		echo "Existing binutils repo found, skipping clone
 	fi
 else
 	echo "cloning GNU binutils repo"
@@ -375,10 +339,9 @@ cmake -G Ninja -Wno-dev --log-level=NOTICE \
 	-DCOMPILER_RT_BUILD_SANITIZERS=OFF \
 	-DCOMPILER_RT_BUILD_XRAY=OFF \
 	-DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
-	-DCLANG_VENDOR="Neutron" \
+	-DCLANG_VENDOR="greenforce" \
 	-DLLVM_ENABLE_BACKTRACES=OFF \
 	-DLLVM_ENABLE_WARNINGS=OFF \
-	-DLLVM_ENABLE_LTO=Thin \
 	-DCMAKE_C_COMPILER=$LLVM_BIN_DIR/clang \
 	-DCMAKE_CXX_COMPILER=$LLVM_BIN_DIR/clang++ \
 	-DCMAKE_AR=$LLVM_BIN_DIR/llvm-ar \
@@ -438,8 +401,8 @@ if [[ $POLLY_OPT -eq 1 ]]; then
 fi
 
 cmake -G Ninja -Wno-dev --log-level=NOTICE \
-	-DCLANG_VENDOR="Neutron" \
-	-DLLVM_TARGETS_TO_BUILD='AArch64;ARM;X86' \
+	-DCLANG_VENDOR="greenforce" \
+	-DLLVM_TARGETS_TO_BUILD='AArch64;ARM' \
 	-DCMAKE_BUILD_TYPE=Release \
 	-DLLVM_ENABLE_WARNINGS=OFF \
 	-DLLVM_ENABLE_PROJECTS='clang;lld' \
@@ -633,8 +596,8 @@ else
 fi
 cd "$OUT"
 cmake -G Ninja -Wno-dev --log-level=NOTICE \
-	-DCLANG_VENDOR="Neutron" \
-	-DLLVM_TARGETS_TO_BUILD='AArch64;ARM;X86' \
+	-DCLANG_VENDOR="greenforce" \
+	-DLLVM_TARGETS_TO_BUILD='AArch64;ARM' \
 	-DCMAKE_BUILD_TYPE=Release \
 	-DLLVM_TOOL_CLANG_BUILD=ON \
 	-DLLVM_TOOL_LLD_BUILD=ON \
@@ -654,7 +617,6 @@ cmake -G Ninja -Wno-dev --log-level=NOTICE \
 	-DCOMPILER_RT_BUILD_CRT=OFF \
 	-DCOMPILER_RT_BUILD_XRAY=OFF \
 	-DLLVM_ENABLE_TERMINFO=OFF \
-	-DLLVM_ENABLE_LTO=Full \
 	-DCMAKE_C_COMPILER=$STAGE1/clang \
 	-DCMAKE_CXX_COMPILER=$STAGE1/clang++ \
 	-DCMAKE_AR=$STAGE1/llvm-ar \

@@ -11,7 +11,6 @@ BINUTILS_BUILD="$BUILDDIR/binutils-build"
 
 # The main build function that builds GNU binutils.
 build() {
-
 	if [ -d $BINUTILS_BUILD ]; then
 		rm -rf $BINUTILS_BUILD
 	fi
@@ -45,8 +44,7 @@ build() {
 			--enable-threads \
 			--enable-targets=x86_64-pep \
 			--enable-ld=default \
-			--quiet \
-			--with-pkgversion="Neutron Binutils"
+			--quiet
 		;;
 	"ARM64")
 		"$BINUTILS_DIR"/configure \
@@ -76,8 +74,7 @@ build() {
 			--enable-gold \
 			--enable-threads \
 			--enable-ld=default \
-			--quiet \
-			--with-pkgversion="Neutron Binutils"
+			--quiet
 		;;
 	"ARM")
 		"$BINUTILS_DIR"/configure \
@@ -107,8 +104,7 @@ build() {
 			--enable-gold \
 			--enable-threads \
 			--enable-ld=default \
-			--quiet \
-			--with-pkgversion="Neutron Binutils"
+			--quiet
 		;;
 	*)
 		echo "You have specified a wrong architecture type or one that we do not support! Do specify the correct one or feel free to make a PR with the relevant changes to add support to the architecture that you are trying to build this toolchain for."
@@ -122,11 +118,6 @@ build() {
 
 # This is where the build starts.
 echo "Starting Binutils Build"
-echo "Starting Binutils Build for x86-64"
-build "X86" || (
-	echo "x86-64 Build failed!"
-	exit 1
-)
 echo "Starting Binutils Build for arm"
 build "ARM" || (
 	echo "arm Build failed!"
